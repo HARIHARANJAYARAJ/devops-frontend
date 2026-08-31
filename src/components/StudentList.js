@@ -15,6 +15,7 @@ export default function StudentList({ students, onEdit, onDelete }) {
             <th>Email</th>
             <th>Phone</th>
             <th>Department</th>
+            <th>City</th>
             <th>Year</th>
             <th>Actions</th>
           </tr>
@@ -27,6 +28,7 @@ export default function StudentList({ students, onEdit, onDelete }) {
               <td>{s.email}</td>
               <td>{s.phone}</td>
               <td>{s.department}</td>
+              <td>{s.city}</td>
               <td>{s.year}</td>
               <td className="actions">
                 <button onClick={() => onEdit(s)}>Edit</button>
