@@ -10,6 +10,7 @@ const emptyForm = {
   year: "",
   address: "",
   city: "",
+  nativeplace: "",
 };
 
 export default function StudentForm({
@@ -175,6 +176,16 @@ export default function StudentForm({
           placeholder="Street, City, State"
         />
       </div>
+      <div className="form-row">
+  <label>Native Place</label>
+  <input
+    type="text"
+    name="nativeplace"
+    value={form.nativeplace || ""}
+    onChange={handleChange}
+    placeholder="e.g. Madurai"
+  />
+</div>
 
       <div className="form-actions">
         <button type="submit">

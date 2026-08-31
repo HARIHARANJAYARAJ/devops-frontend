@@ -17,7 +17,9 @@ export default function StudentList({ students, onEdit, onDelete }) {
             <th>Department</th>
             <th>Year</th>
             <th>City</th>
+            <th>nativepalce</th>
             <th>Actions</th>
+
           </tr>
         </thead>
 
@@ -31,6 +33,7 @@ export default function StudentList({ students, onEdit, onDelete }) {
               <td>{s.department}</td>
               <td>{s.year}</td>
               <td>{s.city || "-"}</td>
+              <td>{s.nativeplace || "-"}</td>
 
               <td className="actions">
                 <button onClick={() => onEdit(s)}>
