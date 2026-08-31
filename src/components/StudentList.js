@@ -19,6 +19,7 @@ export default function StudentList({ students, onEdit, onDelete }) {
             <th>City</th>
             <th>nativepalce</th>
             <th>10th Mark</th>
+            <th>12th Mark</th>
             <th>Actions</th>
 
 
@@ -37,6 +38,8 @@ export default function StudentList({ students, onEdit, onDelete }) {
               <td>{s.city || "-"}</td>
               <td>{s.nativeplace || "-"}</td>
               <td>{s.tenth_mark ?? "-"}</td>
+              <td>{s.twelfth_mark ?? "-"}</td>
+              
 
               <td className="actions">
                 <button onClick={() => onEdit(s)}>
