@@ -15,11 +15,12 @@ export default function StudentList({ students, onEdit, onDelete }) {
             <th>Email</th>
             <th>Phone</th>
             <th>Department</th>
-            <th>City</th>
             <th>Year</th>
+            <th>City</th>
             <th>Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {students.map((s) => (
             <tr key={s.id}>
@@ -28,11 +29,18 @@ export default function StudentList({ students, onEdit, onDelete }) {
               <td>{s.email}</td>
               <td>{s.phone}</td>
               <td>{s.department}</td>
-              <td>{s.city}</td>
               <td>{s.year}</td>
+              <td>{s.city || "-"}</td>
+
               <td className="actions">
-                <button onClick={() => onEdit(s)}>Edit</button>
-                <button className="danger" onClick={() => onDelete(s.id)}>
+                <button onClick={() => onEdit(s)}>
+                  Edit
+                </button>
+
+                <button
+                  className="danger"
+                  onClick={() => onDelete(s.id)}
+                >
                   Delete
                 </button>
               </td>
