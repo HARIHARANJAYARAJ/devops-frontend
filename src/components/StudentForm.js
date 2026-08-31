@@ -11,6 +11,7 @@ const emptyForm = {
   address: "",
   city: "",
   nativeplace: "",
+  tenth_mark: "",
 };
 
 export default function StudentForm({
@@ -184,6 +185,18 @@ export default function StudentForm({
     value={form.nativeplace || ""}
     onChange={handleChange}
     placeholder="e.g. Madurai"
+  />
+</div>
+<div className="form-row">
+  <label>10th Mark</label>
+  <input
+    type="number"
+    name="tenth_mark"
+    value={form.tenth_mark || ""}
+    onChange={handleChange}
+    placeholder="e.g. 450"
+    min="0"
+    max="500"
   />
 </div>
 
