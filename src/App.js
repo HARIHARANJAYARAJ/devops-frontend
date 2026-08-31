@@ -51,7 +51,7 @@ function App() {
   return (
     <div className="app-container">
       <header>
-        <h1>Student  MA System</h1>
+        <h1>Student  MAn System</h1>
         <p>React + FastAPI + PostgreSQL</p>
       </header>
 
