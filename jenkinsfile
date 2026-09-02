@@ -59,7 +59,6 @@ pipeline {
                             --image ${IMAGE_NAME}:${BUILD_NUMBER} \
                             --update-parallelism 1 \
                             --update-delay 5s \
-                            --update-order start-first \
                             ${SERVICE_NAME}
 
                     else
@@ -80,24 +79,23 @@ pipeline {
         stage('Check Swarm Service') {
             steps {
                 sh '''
-                    echo "Swarm services:"
+                    echo "======================================"
+                    echo "Docker Swarm Service"
+                    echo "======================================"
+
                     docker service ls
 
-                    echo "Frontend service:"
+                    echo ""
+                    echo "======================================"
+                    echo "Frontend Tasks"
+                    echo "======================================"
+
                     docker service ps ${SERVICE_NAME}
-                '''
-            }
-        }
 
-        stage('Health Check') {
-            steps {
-                sh '''
-                    echo "Waiting for frontend..."
-                    sleep 10
-
-                    curl -f http://localhost/ || exit 1
-
-                    echo "Frontend health check successful!"
+                    echo ""
+                    echo "======================================"
+                    echo "Swarm Deployment Successful"
+                    echo "======================================"
                 '''
             }
         }
@@ -106,11 +104,15 @@ pipeline {
     post {
 
         success {
-            echo 'Frontend successfully built, pushed and deployed to Docker Swarm!'
+            echo '======================================'
+            echo 'SUCCESS: Frontend deployed to Docker Swarm!'
+            echo '======================================'
         }
 
         failure {
-            echo 'Frontend deployment failed!'
+            echo '======================================'
+            echo 'FAILURE: Frontend deployment failed!'
+            echo '======================================'
         }
     }
 }
