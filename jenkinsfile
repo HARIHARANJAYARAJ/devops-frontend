@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'hariharan1112/student-frontend'
-        CONTAINER_NAME = 'student-frontend'
+        SERVICE_NAME = 'student-frontend'
     }
 
     stages {
@@ -17,8 +17,10 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
+                    docker build \
+                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
                 '''
             }
         }
@@ -46,17 +48,43 @@ pipeline {
             }
         }
 
-        stage('Deploy Frontend') {
+        stage('Deploy to Docker Swarm') {
             steps {
                 sh '''
-                    docker pull ${IMAGE_NAME}:latest
+                    if docker service inspect ${SERVICE_NAME} >/dev/null 2>&1; then
 
-                    docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
+                        echo "Updating existing Swarm service..."
 
-                    docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        -p 80:80 \
-                        ${IMAGE_NAME}:latest
+                        docker service update \
+                            --image ${IMAGE_NAME}:${BUILD_NUMBER} \
+                            --update-parallelism 1 \
+                            --update-delay 5s \
+                            --update-order start-first \
+                            ${SERVICE_NAME}
+
+                    else
+
+                        echo "Creating new Swarm service..."
+
+                        docker service create \
+                            --name ${SERVICE_NAME} \
+                            --publish published=80,target=80 \
+                            --replicas 1 \
+                            ${IMAGE_NAME}:${BUILD_NUMBER}
+
+                    fi
+                '''
+            }
+        }
+
+        stage('Check Swarm Service') {
+            steps {
+                sh '''
+                    echo "Swarm services:"
+                    docker service ls
+
+                    echo "Frontend service:"
+                    docker service ps ${SERVICE_NAME}
                 '''
             }
         }
@@ -64,20 +92,25 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh '''
-                    sleep 5
-                    curl -f http://localhost/
+                    echo "Waiting for frontend..."
+                    sleep 10
+
+                    curl -f http://localhost/ || exit 1
+
+                    echo "Frontend health check successful!"
                 '''
             }
         }
     }
 
     post {
+
         success {
-            echo 'Frontend build and deployment successful!'
+            echo 'Frontend successfully built, pushed and deployed to Docker Swarm!'
         }
 
         failure {
-            echo 'Frontend build or deployment failed!'
+            echo 'Frontend deployment failed!'
         }
     }
 }
