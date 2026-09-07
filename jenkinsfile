@@ -48,7 +48,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Docker Swarm') {
+        stage('Deploy Frontend to Swarm') {
             steps {
                 sh '''
                     if docker service inspect ${SERVICE_NAME} >/dev/null 2>&1; then
@@ -58,7 +58,10 @@ pipeline {
                         docker service update \
                             --image ${IMAGE_NAME}:${BUILD_NUMBER} \
                             --update-parallelism 1 \
-                            --update-delay 5s \
+                            --update-delay 2s \
+                            --update-order start-first \
+                            --rollback-parallelism 1 \
+                            --rollback-order start-first \
                             ${SERVICE_NAME}
 
                     else
@@ -67,8 +70,14 @@ pipeline {
 
                         docker service create \
                             --name ${SERVICE_NAME} \
+                            --network student-network \
                             --publish published=80,target=80 \
-                            --replicas 1 \
+                            --replicas 2 \
+                            --update-parallelism 1 \
+                            --update-delay 2s \
+                            --update-order start-first \
+                            --rollback-parallelism 1 \
+                            --rollback-order start-first \
                             ${IMAGE_NAME}:${BUILD_NUMBER}
 
                     fi
@@ -76,25 +85,111 @@ pipeline {
             }
         }
 
-        stage('Check Swarm Service') {
+        stage('Wait for Swarm') {
             steps {
                 sh '''
+                    echo "Waiting for frontend replicas..."
+
+                    for i in $(seq 1 30); do
+
+                        RUNNING=$(docker service ls \
+                            --filter name=${SERVICE_NAME} \
+                            --format "{{.Replicas}}")
+
+                        echo "Frontend replicas: ${RUNNING}"
+
+                        if [ "$RUNNING" = "2/2" ]; then
+                            echo "Frontend is running with 2/2 replicas."
+                            exit 0
+                        fi
+
+                        sleep 1
+                    done
+
+                    echo "ERROR: Frontend did not reach 2/2 replicas."
+
+                    docker service ps ${SERVICE_NAME}
+
+                    exit 1
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    echo "Checking frontend..."
+
+                    SUCCESS=0
+
+                    for i in $(seq 1 10); do
+
+                        echo "Health check attempt ${i}/10"
+
+                        if curl \
+                            --connect-timeout 2 \
+                            --max-time 3 \
+                            -fsS \
+                            http://35.154.164.244/ >/dev/null; then
+
+                            echo "Frontend health check: SUCCESS"
+
+                            SUCCESS=1
+                            break
+                        fi
+
+                        echo "Frontend not ready yet."
+
+                        sleep 1
+                    done
+
+                    if [ "$SUCCESS" -ne 1 ]; then
+
+                        echo "Frontend health check FAILED."
+
+                        echo ""
+                        echo "Swarm service status:"
+
+                        docker service ls
+
+                        echo ""
+                        echo "Frontend tasks:"
+
+                        docker service ps ${SERVICE_NAME}
+
+                        echo ""
+                        echo "Frontend logs:"
+
+                        docker service logs \
+                            --tail 50 \
+                            ${SERVICE_NAME}
+
+                        exit 1
+                    fi
+                '''
+            }
+        }
+
+        stage('Show Swarm Status') {
+            steps {
+                sh '''
+                    echo ""
                     echo "======================================"
-                    echo "Docker Swarm Service"
+                    echo "FRONTEND SWARM SERVICE"
                     echo "======================================"
 
                     docker service ls
 
                     echo ""
                     echo "======================================"
-                    echo "Frontend Tasks"
+                    echo "FRONTEND TASKS"
                     echo "======================================"
 
                     docker service ps ${SERVICE_NAME}
 
                     echo ""
                     echo "======================================"
-                    echo "Swarm Deployment Successful"
+                    echo "FRONTEND DEPLOYMENT SUCCESSFUL"
                     echo "======================================"
                 '''
             }
@@ -104,15 +199,11 @@ pipeline {
     post {
 
         success {
-            echo '======================================'
-            echo 'SUCCESS: Frontend deployed to Docker Swarm!'
-            echo '======================================'
+            echo 'Frontend CI/CD pipeline completed successfully!'
         }
 
         failure {
-            echo '======================================'
-            echo 'FAILURE: Frontend deployment failed!'
-            echo '======================================'
+            echo 'Frontend CI/CD pipeline FAILED!'
         }
     }
 }
